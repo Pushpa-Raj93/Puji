@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustFlow - Blockchain Charity</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- Auth Screens --- */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+        }
+
+        .card {
+            background: var(--glass);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--dark);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .secondary-btn {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .secondary-btn:hover {
+            background: #eef2ff;
+        }
+
+        /* --- Dashboard --- */
+        #dashboard {
+            display: none;
+            background: var(--glass);
+            min-height: 90vh;
+            border-radius: 1rem;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .nav-links button {
+            width: auto;
+            margin: 0 5px;
+            padding: 8px 16px;
+            background: transparent;
+            color: var(--dark);
+        }
+
+        .nav-links button.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .block {
+            background: var(--dark);
+            color: #0f0;
+            font-family: monospace;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border-left: 5px solid var(--secondary);
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .block.tampered {
+            border-left-color: var(--danger);
+            color: #fca5a5;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status.valid {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.invalid {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* --- Notifications --- */
+        #notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .success {
+            background: var(--secondary);
+        }
+
+        .error {
+            background: var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="notification"></div>
+
+    <div class="container">
+        <!-- Login Section -->
+        <div id="auth-section" class="auth-container">
+            <div class="card">
+                <h1 style="text-align: center;">TrustFlow</h1>
+                <p style="text-align: center; color: #666;">Blockchain Charity Platform</p>
+
+                <div id="login-form">
+                    <input type="text" id="l_username" placeholder="Username">
+                    <input type="password" id="l_password" placeholder="Password">
+                    <button onclick="login()">Login</button>
+                    <button class="secondary-btn" onclick="toggleAuth('register')">Create Account</button>
+                </div>
+
+                <div id="register-form" style="display: none;">
+                    <input type="text" id="r_username" placeholder="Choose Username (min 3 chars)" minlength="3">
+                    <input type="password" id="r_password" placeholder="Choose Password (min 6 chars)" minlength="6">
+                    <select id="r_role">
+                        <option value="Donor">Donor</option>
+                        <option value="Charity">Charity</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                    <button onclick="register()">Register</button>
+                    <button class="secondary-btn" onclick="toggleAuth('login')">Back to Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard">
+            <div class="nav">
+                <div>
+                    <h2>Welcome, <span id="user-display">User</span></h2>
+                    <span class="status valid" id="role-display">Role</span>
+                </div>
+                <div class="nav-links">
+                    <button onclick="showSection('action')" id="btn-action">Actions</button>
+                    <button onclick="fetchLedger(); showSection('ledger')" id="btn-ledger">Blockchain Ledger</button>
+                    <button onclick="loadProfile(); showSection('profile')" id="btn-profile">Profile & Bank</button>
+                    <button onclick="loadAdminDashboard(); showSection('admin')" id="btn-admin" style="display: none;">Admin Dashboard</button>
+                    <button onclick="logout()" style="background: var(--danger);">Logout</button>
+                </div>
+            </div>
+
+            <!-- Action Panel -->
+            <div id="action-panel" class="grid">
+                <!-- Donor Actions -->
+                <div class="panel" id="pnl-donor" style="display: none;">
+                    <h3>Make a Donation</h3>
+                    <p>Select a charity and send funds securely.</p>
+                    <input type="text" id="donate-charity" placeholder="Charity Name (e.g., SaveTheKids)">
+                    <input type="number" id="donate-amount" placeholder="Amount ($)">
+                    <button onclick="donate()">Donate Funds</button>
+                </div>
+
+                <!-- Charity Actions -->
+                <div class="panel" id="pnl-charity" style="display: none;">
+                    <h3>Request Funding</h3>
+                    <p>Create a smart contract request for your cause.</p>
+                    <input type="number" id="req-amount" placeholder="Amount Needed ($)">
+                    <button onclick="requestFunds()">Submit Request</button>
+                </div>
+
+                <!-- Admin/General Actions -->
+                <div class="panel">
+                    <h3>System Status & Security</h3>
+                    <p>Current Token Status: <strong style="color: var(--secondary);">Active</strong></p>
+                    <button class="secondary-btn" onclick="verifyChain()">Verify Blockchain Integrity</button>
+                    <hr>
+                    <h4 style="color: var(--danger);">Simulation Controls</h4>
+                    <p>For academic demonstration only.</p>
+                    <button onclick="tamperChain()" style="background: var(--danger);">Simulate 51% Attack
+                        (Tamper)</button>
+                </div>
+            </div>
+
+            <!-- Ledger Panel -->
+            <div id="ledger-panel" style="display: none;">
+                <h3 style="margin-bottom: 20px;">Live Blockchain Ledger</h3>
+                <div id="chain-container">
+                    <!-- Blocks go here -->
+                </div>
+            </div>
+
+            <!-- Bank/Profile Panel -->
+            <div id="pnl-profile" class="panel" style="display: none;">
+                <h3>Bank Account Details</h3>
+                <p>Link your bank account for fund withdrawals/deposits.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label>IFSC Code</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="bank-ifsc" placeholder="e.g. SBIN0001234"
+                                oninput="this.value = this.value.toUpperCase()">
+                            <button class="secondary-btn" onclick="lookupIFSC()" style="width: auto;">Verify</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Account Number</label>
+                        <input type="text" id="bank-acc" placeholder="1234567890">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                    <div>
+                        <label>Bank Name</label>
+                        <input type="text" id="bank-name" readonly style="background: #f9f9f9;">
+                    </div>
+                    <div>
+                        <label>Branch</label>
+                        <input type="text" id="bank-branch" readonly style="background: #f9f9f9;">
+                    </div>
+                </div>
+
+                <hr>
+                <button onclick="saveBankDetails()" style="background: var(--secondary); margin-top: 10px;">Save Bank Details</button>
+            </div>
+
+            <!-- Admin Dashboard Panel -->
+            <div id="admin-panel" style="display: none;">
+                <h3 style="margin-bottom: 20px;">📊 Admin Dashboard</h3>
+                
+                <!-- Admin Tabs -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                    <button class="secondary-btn" onclick="showAdminTab('donors')" style="width: auto; background: #4f46e5; color: white;">👥 Donors</button>
+                    <button class="secondary-btn" onclick="showAdminTab('charities')" style="width: auto;">🏥 Charities</button>
+                    <button class="secondary-btn" onclick="showAdminTab('transactions')" style="width: auto;">💳 Transactions</button>
+                    <button class="secondary-btn" onclick="showAdminTab('pending')" style="width: auto;">⏳ Pending Requests</button>
+                </div>
+
+                <!-- Donors Tab -->
+                <div id="admin-donors-tab">
+                    <h4>Registered Donors</h4>
+                    <div id="donors-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                        <!-- Donors will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Charities Tab -->
+                <div id="admin-charities-tab" style="display: none;">
+                    <h4>Registered Charities & Collections</h4>
+                    <div id="charities-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                        <!-- Charities will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Transactions Tab -->
+                <div id="admin-transactions-tab" style="display: none;">
+                    <h4>All Transactions</h4>
+                    <div id="transactions-list" style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <!-- Transactions will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Pending Requests Tab -->
+                <div id="admin-pending-tab" style="display: none;">
+                    <h4>Pending Fund Requests</h4>
+                    <div id="pending-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                        <!-- Pending requests will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000";
+        let token = localStorage.getItem('token');
+        let currentUser = null;
+
+        // --- Auth Logic ---
+        function toggleAuth(view) {
+            document.getElementById('login-form').style.display = view === 'login' ? 'block' : 'none';
+            document.getElementById('register-form').style.display = view === 'register' ? 'block' : 'none';
+        }
+
+        async function login() {
+            const u = document.getElementById('l_username').value;
+            const p = document.getElementById('l_password').value;
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                    // Decode token roughly to get role (in real app use a lib)
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    currentUser = payload;
+                    initDashboard();
+                } else {
+                    showNotify(data.message, 'error');
+                }
+            } catch (e) { showNotify("Connection Error", 'error'); }
+        }
+
+        async function sendRegOTP() {
+            // Removed - OTP not needed for registration
+        }
+
+        async function register() {
+            const username = document.getElementById('r_username').value.trim();
+            const password = document.getElementById('r_password').value;
+            const role = document.getElementById('r_role').value;
+
+            // Validation
+            if (!username || !password) {
+                showNotify("Username and password are required", "error");
+                return;
+            }
+
+            if (username.length < 3) {
+                showNotify("Username must be at least 3 characters", "error");
+                return;
+            }
+
+            if (password.length < 6) {
+                showNotify("Password must be at least 6 characters", "error");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username: username, 
+                        password: password, 
+                        role: role
+                    })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showNotify("✓ Registration successful! Please login.", 'success');
+                    setTimeout(() => toggleAuth('login'), 1500);
+                } else {
+                    showNotify(data.message, 'error');
+                }
+            } catch (e) {
+                showNotify("Error: " + e.message, 'error');
+            }
+        }
+
+        function logout() {
+            token = null;
+            currentUser = null;
+            localStorage.removeItem('token');
+            location.reload();
+        }
+
+        // --- Dashboard Logic ---
+        function initDashboard() {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+
+            document.getElementById('user-display').innerText = currentUser.user;
+            document.getElementById('role-display').innerText = currentUser.role;
+
+            // Show/Hide Role Panels
+            document.getElementById('pnl-donor').style.display = currentUser.role === 'Donor' ? 'block' : 'none';
+            document.getElementById('pnl-charity').style.display = currentUser.role === 'Charity' ? 'block' : 'none';
+            
+            // Show Admin button if user is Admin
+            if (currentUser.role === 'Admin') {
+                document.getElementById('btn-admin').style.display = 'block';
+            }
+
+            loadProfile(); // Load profile details on dashboard init
+            showSection('action');
+        }
+
+        function showSection(id) {
+            document.getElementById('action-panel').style.display = id === 'action' ? 'grid' : 'none';
+            document.getElementById('ledger-panel').style.display = id === 'ledger' ? 'block' : 'none';
+            document.getElementById('pnl-profile').style.display = id === 'profile' ? 'block' : 'none';
+            document.getElementById('admin-panel').style.display = id === 'admin' ? 'block' : 'none';
+
+            document.getElementById('btn-action').classList.toggle('active', id === 'action');
+            document.getElementById('btn-ledger').classList.toggle('active', id === 'ledger');
+            document.getElementById('btn-profile').classList.toggle('active', id === 'profile');
+            if (document.getElementById('btn-admin')) {
+                document.getElementById('btn-admin').classList.toggle('active', id === 'admin');
+            }
+        }
+
+        // --- Actions ---
+        async function donate() {
+            const charity = document.getElementById('donate-charity').value;
+            const amount = document.getElementById('donate-amount').value;
+            callAuthApi('/donate', { charity, amount });
+        }
+
+        async function requestFunds() {
+            const amount = document.getElementById('req-amount').value;
+            callAuthApi('/request_funds', { amount });
+        }
+
+        async function tamperChain() {
+            const res = await fetch(`${API_URL}/tamper_demo`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                showNotify("ATTACK SUCCESS: Block " + data.block_index + " corrupted!", 'error');
+                fetchLedger(); // refresh view
+            }
+        }
+
+        async function verifyChain() {
+            const res = await fetch(`${API_URL}/verify_chain`);
+            const data = await res.json();
+            if (res.ok) {
+                showNotify("Blockchain is Secure & Valid", 'success');
+            } else {
+                showNotify("SECURITY ALERT: " + data.message, 'error');
+            }
+        }
+
+        async function fetchLedger() {
+            // We use the ledger endpoint (admin only typically, but we might want to relax this for demo visualization or use admin account)
+            // If current user is not admin, they might get 403. 
+            // For the sake of the Demo UI, let's assume we want everyone to SEE the chain (Transparency).
+            // I will update the backend to allow GET /ledger for authenticated users or public.
+            // For now let's try calling it.
+            const res = await fetch(`${API_URL}/ledger`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.status === 403) {
+                showNotify("Only Admin can inspect full ledger details", 'error');
+                return;
+            }
+
+            const data = await res.json();
+            const container = document.getElementById('chain-container');
+            container.innerHTML = '';
+
+            data.chain.forEach(block => {
+                const div = document.createElement('div');
+                div.className = 'block';
+                div.innerHTML = `
+                <strong>Block #${block.index}</strong> [${new Date(block.timestamp * 1000).toLocaleTimeString()}]<br>
+                <small>Previous Hash: ${block.previous_hash.substring(0, 20)}...</small><br>
+                <strong>Hash: ${block.hash ? block.hash.substring(0, 30) : 'Mining...'}...</strong><br>
+                <em>Data: ${JSON.stringify(block.transactions)}</em>
+            `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- Profile & Bank Logic ---
+        async function loadProfile() {
+            try {
+                // We reuse get_user_profile here or just basic info?
+                const res = await fetch(`${API_URL}/get_user_profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.bank_details) {
+                        document.getElementById('bank-acc').value = data.bank_details.account_number || '';
+                        document.getElementById('bank-ifsc').value = data.bank_details.ifsc || '';
+                        document.getElementById('bank-name').value = data.bank_details.bank_name || '';
+                        document.getElementById('bank-branch').value = data.bank_details.branch || '';
+                    }
+                }
+            } catch (e) { }
+        }
+
+        async function lookupIFSC() {
+            const ifsc = document.getElementById('bank-ifsc').value;
+            if (ifsc.length < 5) return showNotify("Invalid IFSC length", "error");
+
+            const res = await fetch(`${API_URL}/get_ifsc`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ifsc })
+            });
+            const data = await res.json();
+            if (data.found) {
+                document.getElementById('bank-name').value = data.data.BANK;
+                document.getElementById('bank-branch').value = data.data.BRANCH;
+                showNotify("Bank verified: " + data.data.BANK, "success");
+            } else {
+                showNotify("IFSC Not Found", "error");
+            }
+        }
+
+        async function generateOTP() {
+            // Removed - OTP not needed
+        }
+
+        async function saveBankDetails() {
+            const account = document.getElementById('bank-acc').value.trim();
+            const ifsc = document.getElementById('bank-ifsc').value.trim();
+            const bank_name = document.getElementById('bank-name').value.trim();
+            const branch = document.getElementById('bank-branch').value.trim();
+
+            if (!account || !ifsc || !bank_name || !branch) {
+                showNotify("Please fill all bank details", "error");
+                return;
+            }
+
+            callAuthApi('/save_bank_details', {
+                account_number: account,
+                ifsc: ifsc,
+                bank_name: bank_name,
+                branch: branch
+            });
+        }
+
+        async function callAuthApi(endpoint, body) {
+            try {
+                const res = await fetch(API_URL + endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotify(data.message, 'success');
+                    if (data.smart_contract_logs && data.smart_contract_logs.length > 0) {
+                        setTimeout(() => alert("SMART CONTRACT EXECUTED:\n" + data.smart_contract_logs.join("\n")), 500);
+                    }
+                } else {
+                    showNotify(data.message, 'error');
+                }
+            } catch (e) { showNotify(e.message, 'error'); }
+        }
+
+        function showNotify(msg, type) {
+            const el = document.getElementById('notification');
+            el.innerText = msg;
+            el.className = type;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+
+        // --- Admin Functions ---
+        async function loadAdminDashboard() {
+            await loadDonors();
+            showAdminTab('donors');
+        }
+
+        function showAdminTab(tab) {
+            document.getElementById('admin-donors-tab').style.display = tab === 'donors' ? 'block' : 'none';
+            document.getElementById('admin-charities-tab').style.display = tab === 'charities' ? 'block' : 'none';
+            document.getElementById('admin-transactions-tab').style.display = tab === 'transactions' ? 'block' : 'none';
+            document.getElementById('admin-pending-tab').style.display = tab === 'pending' ? 'block' : 'none';
+        }
+
+        async function loadDonors() {
+            try {
+                const res = await fetch(`${API_URL}/admin/donors`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const container = document.getElementById('donors-list');
+                container.innerHTML = '';
+                
+                if (data.donors.length === 0) {
+                    container.innerHTML = '<p>No donors registered yet</p>';
+                    return;
+                }
+                
+                data.donors.forEach(donor => {
+                    const card = document.createElement('div');
+                    card.className = 'panel';
+                    card.innerHTML = `
+                        <h4>👤 ${donor.username}</h4>
+                        <p><strong>Balance:</strong> $${donor.balance}</p>
+                        <p><strong>Role:</strong> ${donor.role}</p>
+                        ${donor.bank_details && donor.bank_details.account_number ? `
+                            <hr>
+                            <p><strong>Bank Details:</strong></p>
+                            <small>Account: ${donor.bank_details.account_number}</small><br>
+                            <small>IFSC: ${donor.bank_details.ifsc}</small><br>
+                            <small>Bank: ${donor.bank_details.bank_name}</small>
+                        ` : '<p><small>No bank details added</small></p>'}
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (e) {
+                showNotify('Error loading donors: ' + e.message, 'error');
+            }
+        }
+
+        async function loadCharities() {
+            try {
+                const res = await fetch(`${API_URL}/admin/charities`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const container = document.getElementById('charities-list');
+                container.innerHTML = '';
+                
+                if (data.charities.length === 0) {
+                    container.innerHTML = '<p>No charities registered yet</p>';
+                    return;
+                }
+                
+                data.charities.forEach(charity => {
+                    const card = document.createElement('div');
+                    card.className = 'panel';
+                    card.innerHTML = `
+                        <h4>🏥 ${charity.username}</h4>
+                        <p><strong>Total Received:</strong> $${charity.total_received}</p>
+                        <p><strong>Current Balance:</strong> $${charity.balance}</p>
+                        <p><strong>Role:</strong> ${charity.role}</p>
+                        ${charity.bank_details && charity.bank_details.account_number ? `
+                            <hr>
+                            <p><strong>Bank Details:</strong></p>
+                            <small>Account: ${charity.bank_details.account_number}</small><br>
+                            <small>IFSC: ${charity.bank_details.ifsc}</small><br>
+                            <small>Bank: ${charity.bank_details.bank_name}</small>
+                        ` : '<p><small>No bank details added</small></p>'}
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (e) {
+                showNotify('Error loading charities: ' + e.message, 'error');
+            }
+        }
+
+        async function loadTransactions() {
+            try {
+                const res = await fetch(`${API_URL}/admin/transactions`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const container = document.getElementById('transactions-list');
+                container.innerHTML = '';
+                
+                if (data.transactions.length === 0) {
+                    container.innerHTML = '<p>No transactions yet</p>';
+                    return;
+                }
+                
+                data.transactions.forEach(tx => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'padding: 10px; border-bottom: 1px solid #ddd; margin-bottom: 10px;';
+                    div.innerHTML = `
+                        <strong>Block #${tx.block}</strong><br>
+                        <small style="color: #666;">Type: ${tx.transaction.type}</small><br>
+                        <small style="color: #666;">Amount: $${tx.transaction.amount || 'N/A'}</small><br>
+                        <small style="color: #666;">Timestamp: ${new Date(tx.timestamp * 1000).toLocaleString()}</small><br>
+                        <code style="font-size: 11px; color: #999;">${JSON.stringify(tx.transaction).substring(0, 100)}...</code>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                showNotify('Error loading transactions: ' + e.message, 'error');
+            }
+        }
+
+        async function loadPendingRequests() {
+            try {
+                const res = await fetch(`${API_URL}/admin/pending_requests`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const container = document.getElementById('pending-list');
+                container.innerHTML = '';
+                
+                if (data.pending_requests.length === 0) {
+                    container.innerHTML = '<p>No pending requests</p>';
+                    return;
+                }
+                
+                data.pending_requests.forEach((req, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'panel';
+                    card.innerHTML = `
+                        <h4>⏳ Request #${index + 1}</h4>
+                        <p><strong>Charity:</strong> ${req.charity}</p>
+                        <p><strong>Amount Requested:</strong> $${req.amount}</p>
+                        <p style="color: #ef4444;"><strong>Status:</strong> ⏳ Pending</p>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (e) {
+                showNotify('Error loading pending requests: ' + e.message, 'error');
+            }
+        }
+
+        // Update showAdminTab to load data
+        const originalShowAdminTab = showAdminTab;
+        showAdminTab = function(tab) {
+            originalShowAdminTab(tab);
+            if (tab === 'donors') loadDonors();
+            if (tab === 'charities') loadCharities();
+            if (tab === 'transactions') loadTransactions();
+            if (tab === 'pending') loadPendingRequests();
+        };
+
+        // Check if checks already logged in
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                currentUser = payload;
+                initDashboard();
+            } catch (e) { localStorage.removeItem('token'); }
+        }
+    </script>
+</body>
+
+</html>
