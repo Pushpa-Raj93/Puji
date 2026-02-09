@@ -248,12 +248,15 @@
                 <div>
                     <h2>Welcome, <span id="user-display">User</span></h2>
                     <span class="status valid" id="role-display">Role</span>
+                    <span class="status" style="background: #dbeafe; color: #1e40af; margin-left: 10px;"
+                        id="balance-display">Balance: $0</span>
                 </div>
                 <div class="nav-links">
                     <button onclick="showSection('action')" id="btn-action">Actions</button>
                     <button onclick="fetchLedger(); showSection('ledger')" id="btn-ledger">Blockchain Ledger</button>
                     <button onclick="loadProfile(); showSection('profile')" id="btn-profile">Profile & Bank</button>
-                    <button onclick="loadAdminDashboard(); showSection('admin')" id="btn-admin" style="display: none;">Admin Dashboard</button>
+                    <button onclick="loadAdminDashboard(); showSection('admin')" id="btn-admin"
+                        style="display: none;">Admin Dashboard</button>
                     <button onclick="logout()" style="background: var(--danger);">Logout</button>
                 </div>
             </div>
@@ -264,9 +267,13 @@
                 <div class="panel" id="pnl-donor" style="display: none;">
                     <h3>Make a Donation</h3>
                     <p>Select a charity and send funds securely.</p>
-                    <input type="text" id="donate-charity" placeholder="Charity Name (e.g., SaveTheKids)">
-                    <input type="number" id="donate-amount" placeholder="Amount ($)">
+                    <select id="donate-charity">
+                        <option value="">-- Select a Charity --</option>
+                    </select>
+                    <input type="number" id="donate-amount" placeholder="Amount ($)" min="1">
                     <button onclick="donate()">Donate Funds</button>
+                    <p style="font-size: 0.85rem; color: #666; margin-top: 10px;">Your Balance: <strong
+                            id="donor-balance">$0</strong></p>
                 </div>
 
                 <!-- Charity Actions -->
@@ -275,6 +282,31 @@
                     <p>Create a smart contract request for your cause.</p>
                     <input type="number" id="req-amount" placeholder="Amount Needed ($)">
                     <button onclick="requestFunds()">Submit Request</button>
+                </div>
+
+                <!-- Platform Statistics -->
+                <div class="panel" style="background: linear-gradient(135deg, #667eea20, #764ba220);">
+                    <h3>📊 Platform Statistics</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
+                        <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);"
+                                id="stat-donations">$0</div>
+                            <div style="font-size: 0.8rem; color: #666;">Total Donated</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--secondary);"
+                                id="stat-charities">0</div>
+                            <div style="font-size: 0.8rem; color: #666;">Charities</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6;" id="stat-blocks">0</div>
+                            <div style="font-size: 0.8rem; color: #666;">Blocks</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;" id="stat-pending">0</div>
+                            <div style="font-size: 0.8rem; color: #666;">Pending</div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Admin/General Actions -->
@@ -330,25 +362,32 @@
                 </div>
 
                 <hr>
-                <button onclick="saveBankDetails()" style="background: var(--secondary); margin-top: 10px;">Save Bank Details</button>
+                <button onclick="saveBankDetails()" style="background: var(--secondary); margin-top: 10px;">Save Bank
+                    Details</button>
             </div>
 
             <!-- Admin Dashboard Panel -->
             <div id="admin-panel" style="display: none;">
                 <h3 style="margin-bottom: 20px;">📊 Admin Dashboard</h3>
-                
+
                 <!-- Admin Tabs -->
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-                    <button class="secondary-btn" onclick="showAdminTab('donors')" style="width: auto; background: #4f46e5; color: white;">👥 Donors</button>
-                    <button class="secondary-btn" onclick="showAdminTab('charities')" style="width: auto;">🏥 Charities</button>
-                    <button class="secondary-btn" onclick="showAdminTab('transactions')" style="width: auto;">💳 Transactions</button>
-                    <button class="secondary-btn" onclick="showAdminTab('pending')" style="width: auto;">⏳ Pending Requests</button>
+                <div
+                    style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                    <button class="secondary-btn" onclick="showAdminTab('donors')"
+                        style="width: auto; background: #4f46e5; color: white;">👥 Donors</button>
+                    <button class="secondary-btn" onclick="showAdminTab('charities')" style="width: auto;">🏥
+                        Charities</button>
+                    <button class="secondary-btn" onclick="showAdminTab('transactions')" style="width: auto;">💳
+                        Transactions</button>
+                    <button class="secondary-btn" onclick="showAdminTab('pending')" style="width: auto;">⏳ Pending
+                        Requests</button>
                 </div>
 
                 <!-- Donors Tab -->
                 <div id="admin-donors-tab">
                     <h4>Registered Donors</h4>
-                    <div id="donors-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <div id="donors-list"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
                         <!-- Donors will be loaded here -->
                     </div>
                 </div>
@@ -356,7 +395,8 @@
                 <!-- Charities Tab -->
                 <div id="admin-charities-tab" style="display: none;">
                     <h4>Registered Charities & Collections</h4>
-                    <div id="charities-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <div id="charities-list"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
                         <!-- Charities will be loaded here -->
                     </div>
                 </div>
@@ -364,7 +404,8 @@
                 <!-- Transactions Tab -->
                 <div id="admin-transactions-tab" style="display: none;">
                     <h4>All Transactions</h4>
-                    <div id="transactions-list" style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                    <div id="transactions-list"
+                        style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
                         <!-- Transactions will be loaded here -->
                     </div>
                 </div>
@@ -372,7 +413,8 @@
                 <!-- Pending Requests Tab -->
                 <div id="admin-pending-tab" style="display: none;">
                     <h4>Pending Fund Requests</h4>
-                    <div id="pending-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <div id="pending-list"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
                         <!-- Pending requests will be loaded here -->
                     </div>
                 </div>
@@ -382,7 +424,7 @@
     </div>
 
     <script>
-        const API_URL = "http://127.0.0.1:5000";
+        const API_URL = window.location.origin;
         let token = localStorage.getItem('token');
         let currentUser = null;
 
@@ -446,9 +488,9 @@
                 const res = await fetch(`${API_URL}/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        username: username, 
-                        password: password, 
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
                         role: role
                     })
                 });
@@ -483,14 +525,55 @@
             // Show/Hide Role Panels
             document.getElementById('pnl-donor').style.display = currentUser.role === 'Donor' ? 'block' : 'none';
             document.getElementById('pnl-charity').style.display = currentUser.role === 'Charity' ? 'block' : 'none';
-            
+
             // Show Admin button if user is Admin
             if (currentUser.role === 'Admin') {
                 document.getElementById('btn-admin').style.display = 'block';
             }
 
             loadProfile(); // Load profile details on dashboard init
+            loadCharitiesDropdown(); // Load charities for donor dropdown
+            loadStats(); // Load platform statistics
             showSection('action');
+        }
+
+        // Load charities into dropdown
+        async function loadCharitiesDropdown() {
+            try {
+                const res = await fetch(`${API_URL}/charities`);
+                const data = await res.json();
+                const select = document.getElementById('donate-charity');
+                select.innerHTML = '<option value="">-- Select a Charity --</option>';
+
+                if (data.charities.length === 0) {
+                    select.innerHTML += '<option value="" disabled>No charities registered yet</option>';
+                } else {
+                    data.charities.forEach(charity => {
+                        select.innerHTML += `<option value="${charity.name}">${charity.name} (Received: $${charity.total_received})</option>`;
+                    });
+                }
+            } catch (e) { console.error('Failed to load charities', e); }
+        }
+
+        // Load platform statistics
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_URL}/stats`);
+                const data = await res.json();
+
+                document.getElementById('stat-donations').innerText = '$' + data.total_donations;
+                document.getElementById('stat-charities').innerText = data.charity_count;
+                document.getElementById('stat-blocks').innerText = data.blockchain_length;
+                document.getElementById('stat-pending').innerText = data.pending_requests;
+            } catch (e) { console.error('Failed to load stats', e); }
+        }
+
+        // Update balance display
+        function updateBalanceDisplay(balance) {
+            document.getElementById('balance-display').innerText = 'Balance: $' + balance;
+            if (document.getElementById('donor-balance')) {
+                document.getElementById('donor-balance').innerText = '$' + balance;
+            }
         }
 
         function showSection(id) {
@@ -511,12 +594,34 @@
         async function donate() {
             const charity = document.getElementById('donate-charity').value;
             const amount = document.getElementById('donate-amount').value;
-            callAuthApi('/donate', { charity, amount });
+
+            if (!charity) {
+                showNotify('Please select a charity', 'error');
+                return;
+            }
+            if (!amount || amount <= 0) {
+                showNotify('Please enter a valid amount', 'error');
+                return;
+            }
+
+            await callAuthApi('/donate', { charity, amount });
+            loadProfile(); // Refresh balance
+            loadStats(); // Refresh statistics
+            loadCharitiesDropdown(); // Refresh charity totals
+            document.getElementById('donate-amount').value = ''; // Clear input
         }
 
         async function requestFunds() {
             const amount = document.getElementById('req-amount').value;
-            callAuthApi('/request_funds', { amount });
+
+            if (!amount || amount <= 0) {
+                showNotify('Please enter a valid amount', 'error');
+                return;
+            }
+
+            await callAuthApi('/request_funds', { amount });
+            loadStats(); // Refresh statistics
+            document.getElementById('req-amount').value = ''; // Clear input
         }
 
         async function tamperChain() {
@@ -579,6 +684,10 @@
                 });
                 if (res.ok) {
                     const data = await res.json();
+
+                    // Update balance display
+                    updateBalanceDisplay(data.balance);
+
                     if (data.bank_details) {
                         document.getElementById('bank-acc').value = data.bank_details.account_number || '';
                         document.getElementById('bank-ifsc').value = data.bank_details.ifsc || '';
@@ -682,12 +791,12 @@
                 const data = await res.json();
                 const container = document.getElementById('donors-list');
                 container.innerHTML = '';
-                
+
                 if (data.donors.length === 0) {
                     container.innerHTML = '<p>No donors registered yet</p>';
                     return;
                 }
-                
+
                 data.donors.forEach(donor => {
                     const card = document.createElement('div');
                     card.className = 'panel';
@@ -718,12 +827,12 @@
                 const data = await res.json();
                 const container = document.getElementById('charities-list');
                 container.innerHTML = '';
-                
+
                 if (data.charities.length === 0) {
                     container.innerHTML = '<p>No charities registered yet</p>';
                     return;
                 }
-                
+
                 data.charities.forEach(charity => {
                     const card = document.createElement('div');
                     card.className = 'panel';
@@ -755,12 +864,12 @@
                 const data = await res.json();
                 const container = document.getElementById('transactions-list');
                 container.innerHTML = '';
-                
+
                 if (data.transactions.length === 0) {
                     container.innerHTML = '<p>No transactions yet</p>';
                     return;
                 }
-                
+
                 data.transactions.forEach(tx => {
                     const div = document.createElement('div');
                     div.style.cssText = 'padding: 10px; border-bottom: 1px solid #ddd; margin-bottom: 10px;';
@@ -786,12 +895,12 @@
                 const data = await res.json();
                 const container = document.getElementById('pending-list');
                 container.innerHTML = '';
-                
+
                 if (data.pending_requests.length === 0) {
                     container.innerHTML = '<p>No pending requests</p>';
                     return;
                 }
-                
+
                 data.pending_requests.forEach((req, index) => {
                     const card = document.createElement('div');
                     card.className = 'panel';
@@ -810,7 +919,7 @@
 
         // Update showAdminTab to load data
         const originalShowAdminTab = showAdminTab;
-        showAdminTab = function(tab) {
+        showAdminTab = function (tab) {
             originalShowAdminTab(tab);
             if (tab === 'donors') loadDonors();
             if (tab === 'charities') loadCharities();

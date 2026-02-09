@@ -53,7 +53,7 @@ git push -u origin main
 
      ```
      FLASK_ENV=production
-     SECRET_KEY=abc123xyz789-change-this-random-string
+     SECRET_KEY=-change-this-randabc123xyz789om-string
      DEBUG=False
      ```
 

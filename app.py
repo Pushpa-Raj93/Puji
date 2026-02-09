@@ -10,6 +10,12 @@ import random
 import requests
 import os
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not required in production
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -51,6 +57,7 @@ def token_required(f):
                 token = token.split(" ")[1]
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=[app.config['ALGORITHM']])
             current_user = users.get(data['user'])
+            current_user['username'] = data['user']  # Store username in user object
         except Exception as e:
             return jsonify({'message': 'Token is invalid!', 'error': str(e)}), 403
         return f(current_user, *args, **kwargs)
@@ -152,6 +159,43 @@ def login():
     return jsonify({'message': 'Invalid credentials'}), 401
 
 
+# --- Public Endpoints for Dynamic Data ---
+@app.route('/charities', methods=['GET'])
+def get_public_charities():
+    """Get list of registered charities for donors to select from"""
+    charities = []
+    for username, user in users.items():
+        if user['role'] == 'Charity':
+            charities.append({
+                'name': username,
+                'total_received': contract_state['charity_balances'].get(username, 0)
+            })
+    return jsonify({'charities': charities})
+
+@app.route('/stats', methods=['GET'])
+def get_stats():
+    """Get platform statistics"""
+    total_donations = 0
+    donation_count = 0
+    
+    for block in blockchain.chain:
+        for tx in block.transactions:
+            if tx.get('type') == 'DONATION':
+                total_donations += tx.get('amount', 0)
+                donation_count += 1
+    
+    charity_count = sum(1 for u in users.values() if u['role'] == 'Charity')
+    donor_count = sum(1 for u in users.values() if u['role'] == 'Donor')
+    
+    return jsonify({
+        'total_donations': total_donations,
+        'donation_count': donation_count,
+        'charity_count': charity_count,
+        'donor_count': donor_count,
+        'blockchain_length': len(blockchain.chain),
+        'pending_requests': len(contract_state['pending_requests'])
+    })
+
 @app.route('/donate', methods=['POST'])
 @token_required
 def donate(current_user):
@@ -167,11 +211,7 @@ def donate(current_user):
         
     # Process Donation
     transaction = {
-        'sender': current_user.get('password'), # using password as placeholder ID for now or just username
-        'sender_name': 'Unknown', # Fixed later
-
-        # wait, decorator passes the user object. Let's fix decorator to pass username too or just object.
-        # simpler: just use key from payload
+        'sender': current_user.get('username', 'Unknown'),
         'recipient': charity,
         'amount': amount,
         'type': 'DONATION',
@@ -204,13 +244,7 @@ def request_funds(current_user):
     data = request.get_json()
     amount = float(data.get('amount'))
     
-    # Find username
-    username = None
-    for k, v in users.items():
-        if v == current_user:
-            username = k
-            break
-            
+    username = current_user.get('username', 'Unknown')
     print(f"Request from {username} for {amount}")
     
     req = {'charity': username, 'amount': amount}
@@ -289,6 +323,40 @@ def get_ifsc():
     except Exception as e:
         return jsonify({'found': False, 'message': 'API Error or Invalid Code', 'error': str(e)}), 400
 
+@app.route('/generate_otp', methods=['POST'])
+def generate_otp():
+    data = request.get_json()
+    username = data.get('username')
+    
+    if not username or username not in users:
+        return jsonify({'message': 'User not found'}), 404
+    
+    # Generate a 6-digit OTP
+    otp = str(random.randint(100000, 999999))
+    users[username]['otp'] = otp
+    
+    # In a real app, this would be sent via email/SMS
+    return jsonify({'message': f'OTP sent to registered contact for {username}', 'success': True})
+
+@app.route('/verify_otp', methods=['POST'])
+def verify_otp():
+    data = request.get_json()
+    username = data.get('username')
+    otp = data.get('otp')
+    
+    if not username or username not in users:
+        return jsonify({'message': 'User not found', 'success': False}), 404
+    
+    stored_otp = users[username].get('otp')
+    
+    if stored_otp and stored_otp == otp:
+        # Clear OTP after successful verification
+        users[username]['otp'] = None
+        return jsonify({'message': 'OTP verified successfully', 'success': True})
+    else:
+        return jsonify({'message': 'Invalid OTP', 'success': False}), 400
+
+
 @app.route('/save_bank_details', methods=['POST'])
 @token_required
 def save_bank_details(current_user):
@@ -309,7 +377,7 @@ def save_bank_details(current_user):
 def get_user_profile(current_user):
     # Helper to retrieve saved details
     return jsonify({
-        'username': dict(filter(lambda x: x[1] == current_user, users.items())).get('username', 'Unknown'), # Clean this up later
+        'username': current_user.get('username', 'Unknown'),
         'role': current_user['role'],
         'balance': current_user['balance'],
         'bank_details': current_user.get('bank_details', {})

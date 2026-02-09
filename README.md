@@ -25,7 +25,7 @@ A secure academic prototype demonstrating a blockchain-based charity donation sy
 
 1. **Install Dependencies**:
    ```bash
-   pip install flask pyjwt
+   pip install -r requirements.txt
    ```
 
 2. **Run the Full Demo (Simulation)**:
@@ -42,18 +42,34 @@ A secure academic prototype demonstrating a blockchain-based charity donation sy
    ```bash
    python app.py
    ```
-   Then use Postman or Curl to interact with `http://localhost:5000`.
+   Then open your browser at `http://localhost:5000`.
 
 ## API Endpoints
-- `POST /register`: Register new user.
-- `POST /login`: Get JWT token.
-- `POST /donate`: Donate to a charity (Donor only).
-- `POST /request_funds`: Request funds (Charity only).
-- `GET /ledger`: View Blockchain (Admin only).
-- `GET /verify_chain`: Check integrity.
-- `POST /tamper_demo`: Simulate an attack.
-- `POST /get_ifsc`: Fetch bank details from IFSC.
-- `POST /generate_otp`: Generate OTP for user.
-- `POST /verify_otp`: Verify OTP.
-- `POST /save_bank_details`: Link bank account (Token required).
-- `GET /get_user_profile`: Fetch user profile and bank info.
+
+### Public Endpoints
+- `GET /charities`: Get list of registered charities
+- `GET /stats`: Get platform statistics (total donations, charity count, etc.)
+- `GET /verify_chain`: Check blockchain integrity
+
+### Authentication
+- `POST /register`: Register new user
+- `POST /login`: Get JWT token
+- `POST /generate_otp`: Generate OTP for user
+- `POST /verify_otp`: Verify OTP
+
+### Protected Endpoints (Require JWT)
+- `POST /donate`: Donate to a charity (Donor only)
+- `POST /request_funds`: Request funds (Charity only)
+- `GET /ledger`: View Blockchain (Authenticated users)
+- `POST /get_ifsc`: Fetch bank details from IFSC
+- `POST /save_bank_details`: Link bank account
+- `GET /get_user_profile`: Fetch user profile and bank info
+
+### Admin Endpoints
+- `GET /admin/donors`: Get all donors info
+- `GET /admin/charities`: Get all charities info
+- `GET /admin/transactions`: Get all transactions
+- `GET /admin/pending_requests`: Get pending fund requests
+
+### Demo/Testing
+- `POST /tamper_demo`: Simulate a blockchain attack

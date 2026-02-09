@@ -62,7 +62,6 @@ git init
 ```
 
 ### 4B. Add All Files
-
 ```bash
 git add .
 ```
